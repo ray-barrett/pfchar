@@ -68,7 +68,7 @@ character = Character(
         ),
         CelestialArmour(),
         ShieldOfTheSun(),
-        AmuletOfNaturalArmor(),
+        AmuletOfNaturalArmor(natural_armor_bonus=3),
         RingOfProtection(),
     ],
 )
@@ -174,43 +174,70 @@ def render_combat_modifiers():
     attack_mods = character.attack_bonus()
     damage_mods = character.damage_bonus()
     critical_bonus = character.critical_bonus()
-    ac_bonuses = (
-        character.armour_bonuses() if hasattr(character, "armour_bonuses") else {}
-    )
+    ac_bonuses = character.armour_bonuses()
+    cmb_breakdown = character.get_cmb()
+    cmd_breakdown = character.get_cmd()
 
     attack_total = sum(attack_mods.values())
     damage_total_str = sum_up_modifiers(damage_mods)
+    cmb_total = sum(cmb_breakdown.values()) if cmb_breakdown else 0
+    cmd_total = sum(cmd_breakdown.values()) if cmd_breakdown else 0
 
     with expansion("Combat Modifiers", default=True):
         with ui.card():
             ui.label("Combat Modifiers").style("font-weight: bold; font-size: 1.2rem")
-            with ui.row().classes("items-start"):
-                with ui.column():
+            # Grid for distinct columns; use flex with mt-auto on bottom sections to align separators
+            with ui.element("div").classes(
+                "grid grid-cols-1 md:grid-cols-5 gap-6 items-stretch"
+            ):
+                # Attack Column
+                with ui.element("div").classes("flex flex-col h-full"):
                     ui.label("Attack Bonus:")
                     for name, val in attack_mods.items():
                         ui.label(f"• {name}: {val:+d}")
-                    ui.separator()
-                    ui.label(f"Total Attack Bonus: {attack_total:+d}")
-                with ui.column():
+                    with ui.element("div").classes("mt-auto pt-2"):
+                        ui.separator()
+                        ui.label(f"Total Attack Bonus: {attack_total:+d}")
+                # Damage Column
+                with ui.element("div").classes("flex flex-col h-full"):
                     ui.label("Damage:")
                     for name, dice_list in damage_mods.items():
                         ui.label(f"• {name}: {sum_up_dice(dice_list)}")
-                    ui.separator()
-                    ui.label(f"Total Damage: {damage_total_str}")
-                    ui.label(f"Critical: {crit_to_string(critical_bonus)}")
-                with ui.column():
+                    with ui.element("div").classes("mt-auto pt-2"):
+                        ui.separator()
+                        ui.label(f"Total Damage: {damage_total_str}")
+                        ui.label(f"Critical: {crit_to_string(critical_bonus)}")
+                # AC Column
+                with ui.element("div").classes("flex flex-col h-full"):
                     ui.label("Armor Class (AC):")
                     for ac_type, val in ac_bonuses.items():
                         ui.label(
                             f"• {ac_type.value if hasattr(ac_type, 'value') else str(ac_type)}: {val:+d}"
                         )
-                    ui.separator()
-                    total_ac = get_total_ac(ac_bonuses)
-                    touch_ac = get_touch_ac(ac_bonuses)
-                    flat_footed_ac = get_flat_footed_ac(ac_bonuses)
-                    ui.label(f"Total AC: {total_ac:d}")
-                    ui.label(f"Touch AC: {touch_ac:d}")
-                    ui.label(f"Flat-Footed AC: {flat_footed_ac:d}")
+                    with ui.element("div").classes("mt-auto pt-2"):
+                        ui.separator()
+                        total_ac = get_total_ac(ac_bonuses)
+                        touch_ac = get_touch_ac(ac_bonuses)
+                        flat_footed_ac = get_flat_footed_ac(ac_bonuses)
+                        ui.label(f"Total AC: {total_ac:d}")
+                        ui.label(f"Touch AC: {touch_ac:d}")
+                        ui.label(f"Flat-Footed AC: {flat_footed_ac:d}")
+                # CMB Column
+                with ui.element("div").classes("flex flex-col h-full"):
+                    ui.label("CMB:")
+                    for name, val in cmb_breakdown.items():
+                        ui.label(f"• {name}: {val:+d}")
+                    with ui.element("div").classes("mt-auto pt-2"):
+                        ui.separator()
+                        ui.label(f"Total CMB: {cmb_total:+d}")
+                # CMD Column
+                with ui.element("div").classes("flex flex-col h-full"):
+                    ui.label("CMD:")
+                    for name, val in cmd_breakdown.items():
+                        ui.label(f"• {name}: {val:+d}")
+                    with ui.element("div").classes("mt-auto pt-2"):
+                        ui.separator()
+                        ui.label(f"Total CMD: {cmd_total:d}")
 
 
 # Dialog and helpers for status effects

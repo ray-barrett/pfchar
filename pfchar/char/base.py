@@ -32,18 +32,24 @@ class ACType(enum.StrEnum):
     NATURAL = "Natural"
     DODGE = "Dodge"
     SIZE = "Size"
+    LUCK = "Luck"
+    INSIGHT = "Insight"
+    MORALE = "Morale"
+    PROFANE = "Profane"
+    SACRED = "Sacred"
+    PENALTY = "Penalty"
 
 
 class Size(enum.Enum):
-    FINE = 8
-    DIMINUTIVE = 4
-    TINY = 2
-    SMALL = 1
+    FINE = -8
+    DIMINUTIVE = -4
+    TINY = -2
+    SMALL = -1
     MEDIUM = 0
-    LARGE = -1
-    HUGE = -2
-    GARGANTUAN = -4
-    COLOSSAL = -8
+    LARGE = 1
+    HUGE = 2
+    GARGANTUAN = 4
+    COLOSSAL = 8
 
 
 def stat_modifier(value: int) -> int:
