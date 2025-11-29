@@ -186,14 +186,33 @@ with status_dialog:
         status_name_input = ui.input("Name")
         status_attack_input = ui.number("Attack Bonus", value=0)
         status_damage_input = ui.number("Damage Bonus", value=0)
+        # per-stat modifiers
+        ui.label("Statistic Modifiers").style("margin-top: 0.5rem")
+        stat_inputs: dict[Statistic, any] = {}
+        with ui.column():
+            for stat in Statistic:
+                stat_inputs[stat] = ui.number(stat.value, value=0)
         with ui.row():
 
             def create_status():
                 name = status_name_input.value.strip() or "Status"
                 attack = int(status_attack_input.value or 0)
                 damage = int(status_damage_input.value or 0)
+                stats_dict = {}
+                for stat, inp in stat_inputs.items():
+                    try:
+                        v = int(inp.value or 0)
+                    except Exception:
+                        v = 0
+                    if v:
+                        stats_dict[stat] = v
                 character.statuses.append(
-                    create_status_effect(name, attack_bonus=attack, damage_bonus=damage)
+                    create_status_effect(
+                        name,
+                        attack_bonus=attack,
+                        damage_bonus=damage,
+                        statistics=stats_dict,
+                    )
                 )
                 status_dialog.close()
                 render_statuses.refresh()
