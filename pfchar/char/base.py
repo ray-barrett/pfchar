@@ -23,6 +23,29 @@ class Statistic(enum.StrEnum):
     CHARISMA = "Charisma"
 
 
+class ACType(enum.StrEnum):
+    ARMOR = "Armor"
+    SHIELD = "Shield"
+    DEXTERITY = "Dexterity"
+    ENHANCEMENT = "Enhancement"
+    DEFLECTION = "Deflection"
+    NATURAL = "Natural"
+    DODGE = "Dodge"
+    SIZE = "Size"
+
+
+class Size(enum.Enum):
+    FINE = 8
+    DIMINUTIVE = 4
+    TINY = 2
+    SMALL = 1
+    MEDIUM = 0
+    LARGE = -1
+    HUGE = -2
+    GARGANTUAN = -4
+    COLOSSAL = -8
+
+
 def stat_modifier(value: int) -> int:
     return (value - 10) // 2
 
@@ -89,3 +112,8 @@ class Effect:
         if bonus:
             return [Dice(bonus)]
         return []
+
+    def armour_class_bonus(self, character: "Character") -> dict[ACType, int]:
+        # Technically things like mage armour apply "armor" type but as force
+        # which incorporeal attacks can't bypass. For now we ignore that distinction.
+        return {}

@@ -3,7 +3,14 @@ from nicegui import ui
 from pfchar.char.base import stat_modifier, CriticalBonus, Dice, Statistic
 from pfchar.char.character import Character
 from pfchar.char.enchantments import FlamingBurst
-from pfchar.char.items import StatisticModifyingItem, Weapon
+from pfchar.char.items import (
+    StatisticModifyingItem,
+    Weapon,
+    CelestialArmour,
+    ShieldOfTheSun,
+    AmuletOfNaturalArmor,
+    RingOfProtection,
+)
 from pfchar.char.abilities import (
     PowerAttack,
     WeaponFocus,
@@ -16,11 +23,14 @@ from pfchar.utils import (
     sum_up_dice,
     sum_up_modifiers,
     create_status_effect,
+    get_touch_ac,
+    get_flat_footed_ac,
+    get_total_ac,
 )
 
 character = Character(
     name="Yoyu Tekko",
-    level=20,
+    level=19,
     statistics={
         Statistic.STRENGTH: 19,
         Statistic.DEXTERITY: 14,
@@ -29,7 +39,7 @@ character = Character(
         Statistic.WISDOM: 12,
         Statistic.CHARISMA: 10,
     },
-    base_attack_bonus=20,
+    base_attack_bonus=19,
     main_hand=Weapon(
         name="Infernal Forge",
         type=WeaponType.HAMMER,
@@ -55,7 +65,11 @@ character = Character(
                 Statistic.DEXTERITY: 6,
                 Statistic.CONSTITUTION: 6,
             },
-        )
+        ),
+        CelestialArmour(),
+        ShieldOfTheSun(),
+        AmuletOfNaturalArmor(),
+        RingOfProtection(),
     ],
 )
 
@@ -156,10 +170,13 @@ def render_abilities():
 
 # Make attack/damage section refreshable so computed values update
 @ui.refreshable
-def render_attack_damage():
+def render_combat_modifiers():
     attack_mods = character.attack_bonus()
     damage_mods = character.damage_bonus()
     critical_bonus = character.critical_bonus()
+    ac_bonuses = (
+        character.armour_bonuses() if hasattr(character, "armour_bonuses") else {}
+    )
 
     attack_total = sum(attack_mods.values())
     damage_total_str = sum_up_modifiers(damage_mods)
@@ -167,7 +184,7 @@ def render_attack_damage():
     with expansion("Combat Modifiers", default=True):
         with ui.card():
             ui.label("Combat Modifiers").style("font-weight: bold; font-size: 1.2rem")
-            with ui.row().classes("items-start"):  # two columns
+            with ui.row().classes("items-start"):
                 with ui.column():
                     ui.label("Attack Bonus:")
                     for name, val in attack_mods.items():
@@ -181,6 +198,19 @@ def render_attack_damage():
                     ui.separator()
                     ui.label(f"Total Damage: {damage_total_str}")
                     ui.label(f"Critical: {crit_to_string(critical_bonus)}")
+                with ui.column():
+                    ui.label("Armor Class (AC):")
+                    for ac_type, val in ac_bonuses.items():
+                        ui.label(
+                            f"• {ac_type.value if hasattr(ac_type, 'value') else str(ac_type)}: {val:+d}"
+                        )
+                    ui.separator()
+                    total_ac = get_total_ac(ac_bonuses)
+                    touch_ac = get_touch_ac(ac_bonuses)
+                    flat_footed_ac = get_flat_footed_ac(ac_bonuses)
+                    ui.label(f"Total AC: {total_ac:d}")
+                    ui.label(f"Touch AC: {touch_ac:d}")
+                    ui.label(f"Flat-Footed AC: {flat_footed_ac:d}")
 
 
 # Dialog and helpers for status effects
@@ -311,7 +341,7 @@ def render_statuses():
 def update_combat_sections():
     # re-render the computed sections
     render_statistics.refresh()
-    render_attack_damage.refresh()
+    render_combat_modifiers.refresh()
 
 
 with ui.header():
@@ -325,6 +355,6 @@ with ui.row():
         render_abilities()
         render_statuses()
 
-render_attack_damage()
+render_combat_modifiers()
 
 ui.run()

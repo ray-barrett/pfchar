@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from pfchar.char.base import Effect, Dice, Statistic
+from pfchar.char.base import ACType, Effect, Dice, Statistic
 
 if TYPE_CHECKING:
     from pfchar.char.base import CriticalBonus
@@ -73,3 +73,28 @@ def create_status_effect(
     statistics: dict[Statistic, int] = None,
 ) -> "Effect":
     return CustomEffect(name, attack_bonus, damage_bonus, statistics or {})
+
+
+BASE_AC = 10
+IGNORE_TOUCH_AC_TYPES = {ACType.NATURAL, ACType.ARMOR, ACType.SHIELD}
+IGNORE_FLAT_FOOTED_AC_TYPES = {ACType.DEXTERITY, ACType.DODGE}
+
+
+def get_total_ac(ac_bonuses: dict["ACType", int]) -> int:
+    return BASE_AC + sum(val for val in ac_bonuses.values())
+
+
+def get_touch_ac(ac_bonuses: dict["ACType", int]) -> int:
+    return BASE_AC + sum(
+        val
+        for ac_type, val in ac_bonuses.items()
+        if ac_type not in IGNORE_TOUCH_AC_TYPES
+    )
+
+
+def get_flat_footed_ac(ac_bonuses: dict["ACType", int]) -> int:
+    return BASE_AC + sum(
+        val
+        for ac_type, val in ac_bonuses.items()
+        if ac_type not in IGNORE_FLAT_FOOTED_AC_TYPES
+    )

@@ -1,6 +1,15 @@
 import dataclasses
+from wsgiref import types
 
-from pfchar.char.base import stat_modifier, CriticalBonus, Dice, Effect, Statistic
+from pfchar.char.base import (
+    stat_modifier,
+    ACType,
+    CriticalBonus,
+    Dice,
+    Effect,
+    Size,
+    Statistic,
+)
 from pfchar.char.items import Item, Weapon
 from pfchar.char.abilities import Ability
 
@@ -9,6 +18,7 @@ from pfchar.char.abilities import Ability
 class Character:
     name: str = "Character"
     level: int = 1
+    size: Size = Size.MEDIUM
     statistics: dict[Statistic, int] = dataclasses.field(
         default_factory=lambda: {
             Statistic.STRENGTH: 10,
@@ -99,3 +109,35 @@ class Character:
                 bonus = effect.critical_bonus(self, bonus)
 
         return bonus
+
+    def armour_bonuses(self) -> dict[ACType, int]:
+        bonuses = {ac_type: 0 for ac_type in ACType}
+        bonuses[ACType.SIZE] = self.size.value
+
+        # Enhancements for armour and shield stack, but only the highest bonus applies to each.
+        enhancements = {
+            ACType.SHIELD: 0,
+            ACType.ARMOR: 0,
+        }
+        max_dex_bonus = 99
+        for effect in self._all_effects():
+            max_dex_bonus = min(max_dex_bonus, getattr(effect, "max_dex_bonus", 99))
+            ac_bonuses = effect.armour_class_bonus(self)
+
+            if enhancement_bonus := ac_bonuses.pop(ACType.ENHANCEMENT, 0):
+                overlap = set(enhancements).intersection(ac_bonuses)
+                assert overlap, "Enhancement bonus must apply to armor or shield"
+                for ac_type in overlap:
+                    enhancements[ac_type] = max(
+                        enhancements[ac_type], enhancement_bonus
+                    )
+
+            for ac_type, value in ac_bonuses.items():
+                bonuses[ac_type] = max(bonuses[ac_type], value)
+
+        bonuses[ACType.DEXTERITY] = min(
+            stat_modifier(self.modified_statistic(Statistic.DEXTERITY)), max_dex_bonus
+        )
+        bonuses[ACType.ENHANCEMENT] = sum(enhancements.values())
+
+        return {ac_type: value for ac_type, value in bonuses.items() if value}
