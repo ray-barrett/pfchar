@@ -12,7 +12,6 @@ from pfchar.char.items import (
     RingOfProtection,
     CloakOfResistance,
 )
-from pfchar.char.abilities import DeadlyCritical
 from pfchar.char.feats import (
     Dodge,
     PowerAttack,
@@ -96,90 +95,110 @@ def expansion(name: str, default: bool = False):
         name,
         value=EXPANSION.get(name, default),
         on_value_change=lambda e: EXPANSION.update({name: e.value}),
-    )
+    ).classes("w-full")
+
+
+def header_expansion(name: str, default: bool = False):
+    return expansion(
+        name, default=default
+    ).props('header-class="bg-primary text-white"')
 
 
 # Updates when statuses modify stats
 @ui.refreshable
 def render_statistics():
-    with expansion("Statistics"):
-        with ui.card():
-            ui.label("Statistics").style("font-weight: bold; font-size: 1.2rem")
-            for stat in Statistic:
-                value = character.statistics.get(stat, 10)
-                modifier = stat_modifier(value)
-                modified_value = character.modified_statistic(stat)
-                modified_modifier = stat_modifier(modified_value)
-                if modified_value != value:
-                    ui.label(
-                        f"{stat.value}: {value} ({modifier:+d}) -> {modified_value} ({modified_modifier:+d})"
-                    )
-                else:
-                    ui.label(f"{stat.value}: {value} ({modifier:+d})")
+    with header_expansion("Statistics"):
+        for stat in Statistic:
+            value = character.statistics.get(stat, 10)
+            modifier = stat_modifier(value)
+            modified_value = character.modified_statistic(stat)
+            modified_modifier = stat_modifier(modified_value)
+            if modified_value != value:
+                ui.label(
+                    f"{stat.value}: {value} ({modifier:+d}) -> {modified_value} ({modified_modifier:+d})"
+                )
+            else:
+                ui.label(f"{stat.value}: {value} ({modifier:+d})")
 
 
 def render_weapons():
-    with expansion("Weapons"):
-        with ui.card():
-            ui.label("Weapons").style("font-weight: bold; font-size: 1.2rem")
-            ui.label(f"Base Attack Bonus: {character.base_attack_bonus:+d}")
-            if character.main_hand:
-                w = character.main_hand
-                dmg_str = sum_up_dice(w.damage_bonus(character))
-                ui.label(f"Main Hand: {w.name} (Type: {w.type}, Damage: {dmg_str})")
-            if character.off_hand:
-                w = character.off_hand
-                dmg_str = sum_up_dice(w.damage_bonus(character))
-                ui.label(f"Off Hand: {w.name} (Type: {w.type}, Damage: {dmg_str})")
+    with header_expansion("Weapons"):
+        ui.label(f"Base Attack Bonus: {character.base_attack_bonus:+d}")
+        if character.main_hand:
+            w = character.main_hand
+            dmg_str = sum_up_dice(w.damage_bonus(character))
+            ui.label(f"Main Hand: {w.name} (Type: {w.type}, Damage: {dmg_str})")
+        if character.off_hand:
+            w = character.off_hand
+            dmg_str = sum_up_dice(w.damage_bonus(character))
+            ui.label(f"Off Hand: {w.name} (Type: {w.type}, Damage: {dmg_str})")
 
-            def on_two_handed_change(e):
-                if not character.toggle_two_handed():
-                    e.value = character.is_two_handed()
-                    return
-                # only refresh the combat modifiers section
-                update_combat_sections()
+        def on_two_handed_change(e):
+            if not character.toggle_two_handed():
+                e.value = character.is_two_handed()
+                return
+            # only refresh the combat modifiers section
+            update_combat_sections()
 
-            ui.switch(
-                "Two Handed",
-                value=character.is_two_handed(),
-                on_change=on_two_handed_change,
-            )
+        ui.switch(
+            "Two Handed",
+            value=character.is_two_handed(),
+            on_change=on_two_handed_change,
+        )
 
 
 def render_items():
-    with expansion("Items"):
-        with ui.card():
-            ui.label("Items").style("font-weight: bold; font-size: 1.2rem")
-            if character.items:
-                for item in character.items:
-                    ui.label(item.name)
-            else:
-                ui.label("No items equipped")
+    with header_expansion("Items"):
+        if character.items:
+            for item in character.items:
+                ui.label(item.name)
+        else:
+            ui.label("No items equipped")
 
 
 def render_abilities():
-    with expansion("Abilities"):
-        with ui.card():
-            ui.label("Abilities").style("font-weight: bold; font-size: 1.2rem")
-            for ability in character.abilities:
-                # Only PowerAttack currently has an EnabledCondition toggle
-                if hasattr(ability.condition, "toggle"):
+    with header_expansion("Abilities"):
+        for ability in character.abilities:
+            # Only PowerAttack currently has an EnabledCondition toggle
+            if hasattr(ability.condition, "toggle"):
 
-                    def make_handler(ab):
-                        def handler(e):
-                            ab.condition.toggle()
-                            # only refresh the combat modifiers section
-                            update_combat_sections()
+                def make_handler(ab):
+                    def handler(e):
+                        ab.condition.toggle()
+                        # only refresh the combat modifiers section
+                        update_combat_sections()
 
-                        return handler
+                    return handler
 
-                    ui.switch(
-                        ability.name,
-                        value=ability.condition.enabled,
-                        on_change=make_handler(ability),
-                    )
-                else:
-                    ui.label(ability.name)
+                ui.switch(
+                    ability.name,
+                    value=ability.condition.enabled,
+                    on_change=make_handler(ability),
+                )
+            else:
+                ui.label(ability.name)
+
+def render_feats():
+    with header_expansion("Feats"):
+        for feat in character.feats:
+            # Only PowerAttack currently has an EnabledCondition toggle
+            if hasattr(feat.condition, "toggle"):
+
+                def make_handler(feat_):
+                    def handler(e):
+                        feat_.condition.toggle()
+                        # only refresh the combat modifiers section
+                        update_combat_sections()
+
+                    return handler
+
+                ui.switch(
+                    feat.name,
+                    value=feat.condition.enabled,
+                    on_change=make_handler(feat),
+                )
+            else:
+                ui.label(feat.name)
 
 
 # Make attack/damage section refreshable so computed values update
@@ -198,7 +217,7 @@ def render_combat_modifiers():
     cmb_total = sum(cmb_breakdown.values()) if cmb_breakdown else 0
     cmd_total = sum(cmd_breakdown.values()) if cmd_breakdown else 0
 
-    with expansion("Combat Modifiers", default=True):
+    with header_expansion("Combat Modifiers", default=True):
         with ui.element("div").classes(
             "grid grid-cols-1 md:grid-cols-6 gap-2 items-start"
         ):
@@ -388,22 +407,20 @@ def delete_status(index: int):
 
 @ui.refreshable
 def render_statuses():
-    with expansion("Statuses"):
-        with ui.card():
-            ui.label("Statuses").style("font-weight: bold; font-size: 1.2rem")
-            if character.statuses:
-                for i, status in enumerate(character.statuses):
-                    with ui.row().classes("items-center"):
-                        ui.label(status.name)
-                        ui.button(
-                            icon="delete", on_click=lambda _, idx=i: delete_status(idx)
-                        ).props("flat color=red")
-            else:
-                ui.label("No statuses active")
-            ui.separator()
-            ui.button("Add Status", on_click=open_add_status_dialog).props(
-                "color=primary outline"
-            )
+    with header_expansion("Statuses"):
+        if character.statuses:
+            for i, status in enumerate(character.statuses):
+                with ui.row().classes("items-center"):
+                    ui.label(status.name)
+                    ui.button(
+                        icon="delete", on_click=lambda _, idx=i: delete_status(idx)
+                    ).props("flat color=red")
+        else:
+            ui.label("No statuses active")
+        ui.separator()
+        ui.button("Add Status", on_click=open_add_status_dialog).props(
+            "color=primary outline"
+        )
 
 
 def update_combat_sections():
@@ -416,13 +433,13 @@ with ui.header():
     ui.label(character.name).style("font-weight: bold; font-size: 1.5rem")
 
 with ui.row():
-    with ui.column():
+    with ui.column().style('gap: 0.1rem'):
         render_statistics()
         render_weapons()
         render_items()
         render_abilities()
+        render_feats()
         render_statuses()
-
-render_combat_modifiers()
+        render_combat_modifiers()
 
 ui.run()
