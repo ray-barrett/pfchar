@@ -10,6 +10,7 @@ from pfchar.char.base import (
     Size,
     Statistic,
 )
+from pfchar.char.feats import Feat
 from pfchar.char.items import Item, Weapon
 from pfchar.char.abilities import Ability
 
@@ -33,13 +34,14 @@ class Character:
     base_saves: dict[Save, int] = dataclasses.field(default_factory=dict)
     main_hand: Weapon | None = None
     off_hand: Weapon | None = None
+    feats: list[Feat] = dataclasses.field(default_factory=list)
     items: list[Item] = dataclasses.field(default_factory=list)
     abilities: list[Ability] = dataclasses.field(default_factory=list)
     statuses: list[Effect] = dataclasses.field(default_factory=list)
     _two_handed: bool = False
 
     def _all_effects(self) -> list[Effect]:
-        return self.items + self.abilities + self.statuses
+        return self.abilities + self.feats + self.statuses + self.items
 
     def can_be_two_handed(self) -> bool:
         return (

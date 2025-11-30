@@ -12,7 +12,9 @@ from pfchar.char.items import (
     RingOfProtection,
     CloakOfResistance,
 )
-from pfchar.char.abilities import (
+from pfchar.char.abilities import DeadlyCritical
+from pfchar.char.feats import (
+    Dodge,
     PowerAttack,
     WeaponFocus,
     WeaponTraining,
@@ -56,13 +58,19 @@ character = Character(
         ),
         base_damage=Dice(num=1, sides=8),
         enchantment_modifier=3,
+        # TODO: Critical enhancement bonus from Deadly Critical affects the
+        #       burst damage, but weapon is calculated first _including_ effects.
         enchantments=[FlamingBurst()],
     ),
     abilities=[
+        DeadlyCritical(WeaponType.HAMMER),
+    ],
+    feats=[
         PowerAttack(),
         WeaponFocus(WeaponType.HAMMER),
         WeaponTraining(WeaponType.HAMMER),
         ImprovedCritical(WeaponType.HAMMER),
+        Dodge(),
     ],
     items=[
         StatisticModifyingItem(
