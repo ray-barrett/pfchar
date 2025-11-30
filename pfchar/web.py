@@ -1,6 +1,6 @@
 from nicegui import ui
 
-from pfchar.char.base import stat_modifier, CriticalBonus, Dice, Statistic
+from pfchar.char.base import stat_modifier, CriticalBonus, Dice, Save, Statistic
 from pfchar.char.character import Character
 from pfchar.char.enchantments import FlamingBurst
 from pfchar.char.items import (
@@ -10,6 +10,7 @@ from pfchar.char.items import (
     ShieldOfTheSun,
     AmuletOfNaturalArmor,
     RingOfProtection,
+    CloakOfResistance,
 )
 from pfchar.char.abilities import (
     PowerAttack,
@@ -27,6 +28,7 @@ from pfchar.utils import (
     get_flat_footed_ac,
     get_total_ac,
 )
+from pfchar.char.base import Save
 
 character = Character(
     name="Yoyu Tekko",
@@ -40,6 +42,11 @@ character = Character(
         Statistic.CHARISMA: 10,
     },
     base_attack_bonus=19,
+    base_saves={
+        Save.FORTITUDE: 11,
+        Save.REFLEX: 6,
+        Save.WILL: 6,
+    },
     main_hand=Weapon(
         name="Infernal Forge",
         type=WeaponType.HAMMER,
@@ -68,8 +75,9 @@ character = Character(
         ),
         CelestialArmour(),
         ShieldOfTheSun(),
-        AmuletOfNaturalArmor(natural_armor_bonus=3),
-        RingOfProtection(),
+        AmuletOfNaturalArmor(bonus=3),
+        RingOfProtection(bonus=2),
+        CloakOfResistance(bonus=5),
     ],
 )
 
@@ -177,6 +185,7 @@ def render_combat_modifiers():
     ac_bonuses = character.armour_bonuses()
     cmb_breakdown = character.get_cmb()
     cmd_breakdown = character.get_cmd()
+    saves_breakdown = character.get_saves()
 
     attack_total = sum(attack_mods.values())
     damage_total_str = sum_up_modifiers(damage_mods)
@@ -247,6 +256,18 @@ def render_combat_modifiers():
                     ui.label("Breakdown:")
                     for name, val in cmd_breakdown.items():
                         ui.label(f"• {name}: {val:+d}")
+                # Saves Column
+                with ui.element("div").classes("flex flex-col"):
+                    ui.label("Saves").style("font-weight: bold; text-align: center")
+                    with ui.element("div").classes("h-24"):
+                        for save, data in saves_breakdown.items():
+                            save_total = sum(data.values())
+                            ui.label(f"{save.value}: {save_total:+d}")
+                    ui.separator()
+                    for save, data in saves_breakdown.items():
+                        ui.label(f"{save.value}:")
+                        for name, val in data.items():
+                            ui.label(f"• {name}: {val:+d}")
 
 
 # Dialog and helpers for status effects
@@ -263,6 +284,12 @@ with status_dialog:
         with ui.column():
             for stat in Statistic:
                 stat_inputs[stat] = ui.number(stat.value, value=0)
+        # per-save modifiers
+        ui.label("Save Modifiers").style("margin-top: 0.5rem")
+        save_inputs: dict[Save, any] = {}
+        with ui.row().classes("gap-4"):
+            for save in Save:
+                save_inputs[save] = ui.number(save.value, value=0)
         # warning message area
         warn_label = ui.label("At least one non-name value is required.").style(
             "color: #b00020"
@@ -290,6 +317,14 @@ with status_dialog:
                         except Exception:
                             continue
                 if not non_default:
+                    for inp in save_inputs.values():
+                        try:
+                            if int(inp.value or 0) != 0:
+                                non_default = True
+                                break
+                        except Exception:
+                            continue
+                if not non_default:
                     # show warning and block submission
                     warn_label.visible = True
                     return
@@ -305,12 +340,21 @@ with status_dialog:
                         v = 0
                     if v:
                         stats_dict[stat] = v
+                saves_dict = {}
+                for save, inp in save_inputs.items():
+                    try:
+                        v = int(inp.value or 0)
+                    except Exception:
+                        v = 0
+                    if v:
+                        saves_dict[save] = v
                 character.statuses.append(
                     create_status_effect(
                         name,
                         attack_bonus=attack,
                         damage_bonus=damage,
                         statistics=stats_dict,
+                        saves=saves_dict,
                     )
                 )
                 # reset dialog inputs after successful add
@@ -319,6 +363,8 @@ with status_dialog:
                 status_attack_input.value = 0
                 status_damage_input.value = 0
                 for inp in stat_inputs.values():
+                    inp.value = 0
+                for inp in save_inputs.values():
                     inp.value = 0
                 status_dialog.close()
                 render_statuses.refresh()
@@ -340,6 +386,8 @@ with status_dialog:
         status_attack_input.on("change", clear_warning)
         status_damage_input.on("change", clear_warning)
         for inp in stat_inputs.values():
+            inp.on("change", clear_warning)
+        for inp in save_inputs.values():
             inp.on("change", clear_warning)
 
 

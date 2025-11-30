@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from pfchar.char.base import ACType, Effect, Dice, Statistic
+from pfchar.char.base import ACType, Effect, Dice, Save, Statistic
 
 if TYPE_CHECKING:
     from pfchar.char.base import CriticalBonus
@@ -45,11 +45,13 @@ class CustomEffect(Effect):
         attack_bonus: int,
         damage_bonus: int,
         statistics: dict[Statistic, int],
+        saves: dict[Save, int],
     ):
         super().__init__(name=name)
         self._attack_bonus = attack_bonus
         self._damage_bonus = damage_bonus
         self._statistics = statistics
+        self._saves = saves
 
     def statistic_bonus(self, character, statistic):
         return self._statistics.get(statistic, 0)
@@ -65,14 +67,18 @@ class CustomEffect(Effect):
             bonus.append(Dice(self._damage_bonus))
         return bonus
 
+    def saves_bonuses(self, character: "Character") -> dict[Save, int]:
+        return self._saves.copy()
+
 
 def create_status_effect(
     name: str,
     attack_bonus: int = 0,
     damage_bonus: int = 0,
     statistics: dict[Statistic, int] = None,
+    saves: dict[Save, int] = None,
 ) -> "Effect":
-    return CustomEffect(name, attack_bonus, damage_bonus, statistics or {})
+    return CustomEffect(name, attack_bonus, damage_bonus, statistics or {}, saves or {})
 
 
 BASE_AC = 10

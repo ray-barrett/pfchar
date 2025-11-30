@@ -1,5 +1,4 @@
 import dataclasses
-from wsgiref import types
 
 from pfchar.char.base import (
     stat_modifier,
@@ -7,6 +6,7 @@ from pfchar.char.base import (
     CriticalBonus,
     Dice,
     Effect,
+    Save,
     Size,
     Statistic,
 )
@@ -30,6 +30,7 @@ class Character:
         }
     )
     base_attack_bonus: int = 0
+    base_saves: dict[Save, int] = dataclasses.field(default_factory=dict)
     main_hand: Weapon | None = None
     off_hand: Weapon | None = None
     items: list[Item] = dataclasses.field(default_factory=list)
@@ -194,3 +195,26 @@ class Character:
             **applicable_ac_types,
         }
         return {name: value for name, value in modifiers.items() if value}
+
+    def get_saves(self) -> dict[Save, dict[str, int]]:
+        mapping = {
+            Save.FORTITUDE: Statistic.CONSTITUTION,
+            Save.REFLEX: Statistic.DEXTERITY,
+            Save.WILL: Statistic.WISDOM,
+        }
+        saves = {
+            save: {
+                "Base": value,
+                mapping[save].value: stat_modifier(
+                    self.modified_statistic(mapping[save])
+                ),
+            }
+            for save, value in self.base_saves.items()
+        }
+
+        for effect in self._all_effects():
+            if effect.condition(self):
+                for save, value in effect.saves_bonuses(self).items():
+                    saves[save][effect.name] = value
+
+        return saves

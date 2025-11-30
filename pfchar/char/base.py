@@ -1,4 +1,3 @@
-import abc
 import dataclasses
 import enum
 from typing import TYPE_CHECKING
@@ -21,6 +20,12 @@ class Statistic(enum.StrEnum):
     INTELLIGENCE = "Intelligence"
     WISDOM = "Wisdom"
     CHARISMA = "Charisma"
+
+
+class Save(enum.StrEnum):
+    FORTITUDE = "Fortitude"
+    REFLEX = "Reflex"
+    WILL = "Will"
 
 
 class ACType(enum.StrEnum):
@@ -108,7 +113,6 @@ class Effect:
         statistic = character.attack_statistic()
         return self.statistic_modifier_bonus(character, statistic)
 
-    @abc.abstractmethod
     def damage_bonus(self, character: "Character") -> list[Dice]:
         bonus = self.statistic_modifier_bonus(
             character,
@@ -122,4 +126,7 @@ class Effect:
     def armour_class_bonus(self, character: "Character") -> dict[ACType, int]:
         # Technically things like mage armour apply "armor" type but as force
         # which incorporeal attacks can't bypass. For now we ignore that distinction.
+        return {}
+
+    def saves_bonuses(self, character: "Character") -> dict[Save, int]:
         return {}

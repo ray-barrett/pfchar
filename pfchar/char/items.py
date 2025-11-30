@@ -6,6 +6,7 @@ from pfchar.char.base import (
     CriticalBonus,
     Dice,
     Effect,
+    Save,
     Statistic,
     WeaponType,
 )
@@ -108,19 +109,29 @@ class CelestialArmour(Armour):
 
 @dataclasses.dataclass
 class AmuletOfNaturalArmor(Item):
-    def __init__(self, natural_armor_bonus: int = 2):
-        super().__init__(name=f"Amulet of Natural Armor +{natural_armor_bonus}")
-        self.natural_armor_bonus = natural_armor_bonus
+    def __init__(self, bonus: int = 2):
+        super().__init__(name=f"Amulet of Natural Armor (+{bonus})")
+        self.bonus = bonus
 
     def armour_class_bonus(self, character: "Character") -> dict[ACType, int]:
-        return {ACType.NATURAL: self.natural_armor_bonus}
+        return {ACType.NATURAL: self.bonus}
 
 
 @dataclasses.dataclass
 class RingOfProtection(Item):
-    def __init__(self, deflection_bonus: int = 1):
-        super().__init__(name=f"Ring of Protection +{deflection_bonus}")
-        self.deflection_bonus = deflection_bonus
+    def __init__(self, bonus: int = 1):
+        super().__init__(name=f"Ring of Protection (+{bonus})")
+        self.bonus = bonus
 
     def armour_class_bonus(self, character: "Character") -> dict[ACType, int]:
-        return {ACType.DEFLECTION: self.deflection_bonus}
+        return {ACType.DEFLECTION: self.bonus}
+
+
+@dataclasses.dataclass
+class CloakOfResistance(Item):
+    def __init__(self, bonus: int = 1):
+        super().__init__(name=f"Cloak of Resistance (+{bonus})")
+        self.bonus = bonus
+
+    def saves_bonuses(self, character: "Character") -> dict[Save, int]:
+        return {save: self.bonus for save in Save}
