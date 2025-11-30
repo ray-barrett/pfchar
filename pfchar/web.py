@@ -62,9 +62,6 @@ character = Character(
         #       burst damage, but weapon is calculated first _including_ effects.
         enchantments=[FlamingBurst()],
     ),
-    abilities=[
-        DeadlyCritical(WeaponType.HAMMER),
-    ],
     feats=[
         PowerAttack(),
         WeaponFocus(WeaponType.HAMMER),
@@ -203,79 +200,74 @@ def render_combat_modifiers():
     with expansion("Combat Modifiers", default=True):
         with ui.card():
             ui.label("Combat Modifiers").style("font-weight: bold; font-size: 1.2rem")
-            # Grid with 5 columns; each column: header, totals (fixed height), separator, breakdown
+            # Grid with 6 columns; each column: header, totals (fixed height), separator, collapsible breakdown
             with ui.element("div").classes(
-                "grid grid-cols-1 md:grid-cols-5 gap-6 items-start"
+                "grid grid-cols-1 md:grid-cols-6 gap-6 items-start"
             ):
                 # Attack Column
                 with ui.element("div").classes("flex flex-col"):
                     ui.label("Attack Bonus").style(
                         "font-weight: bold; text-align: center"
                     )
-                    with ui.element("div").classes("h-24"):
+                    with ui.element("div"):
                         ui.label(f"Total Attack Bonus: {attack_total:+d}")
-                    ui.separator()
-                    ui.label("Breakdown:")
-                    for name, val in attack_mods.items():
-                        ui.label(f"• {name}: {val:+d}")
+                    with expansion("Attack Breakdown"):
+                        for name, val in attack_mods.items():
+                            ui.label(f"• {name}: {val:+d}")
                 # Damage Column
                 with ui.element("div").classes("flex flex-col"):
                     ui.label("Damage").style("font-weight: bold; text-align: center")
-                    with ui.element("div").classes("h-24"):
+                    with ui.element("div"):
                         ui.label(f"Total Damage: {damage_total_str}")
                         ui.label(f"Critical: {crit_to_string(critical_bonus)}")
-                    ui.separator()
-                    ui.label("Breakdown:")
-                    for name, dice_list in damage_mods.items():
-                        ui.label(f"• {name}: {sum_up_dice(dice_list)}")
+                    with expansion("Damage Breakdown"):
+                        for name, dice_list in damage_mods.items():
+                            ui.label(f"• {name}: {sum_up_dice(dice_list)}")
                 # AC Column
                 with ui.element("div").classes("flex flex-col"):
                     ui.label("Armor Class (AC)").style(
                         "font-weight: bold; text-align: center"
                     )
-                    with ui.element("div").classes("h-24"):
+                    with ui.element("div"):
                         total_ac = get_total_ac(ac_bonuses)
                         touch_ac = get_touch_ac(ac_bonuses)
                         flat_footed_ac = get_flat_footed_ac(ac_bonuses)
                         ui.label(f"Total AC: {total_ac:d}")
                         ui.label(f"Touch AC: {touch_ac:d}")
                         ui.label(f"Flat-Footed AC: {flat_footed_ac:d}")
-                    ui.separator()
-                    ui.label("Breakdown:")
-                    for ac_type, val in ac_bonuses.items():
-                        ui.label(
-                            f"• {ac_type.value if hasattr(ac_type, 'value') else str(ac_type)}: {val:+d}"
-                        )
+                    with expansion("AC Breakdown"):
+                        for ac_type, val in ac_bonuses.items():
+                            ui.label(
+                                f"• {ac_type.value if hasattr(ac_type, 'value') else str(ac_type)}: {val:+d}"
+                            )
                 # CMB Column
                 with ui.element("div").classes("flex flex-col"):
                     ui.label("CMB").style("font-weight: bold; text-align: center")
-                    with ui.element("div").classes("h-24"):
+                    with ui.element("div"):
                         ui.label(f"Total CMB: {cmb_total:+d}")
-                    ui.separator()
-                    ui.label("Breakdown:")
-                    for name, val in cmb_breakdown.items():
-                        ui.label(f"• {name}: {val:+d}")
+                    with expansion("CMB Breakdown"):
+                        for name, val in cmb_breakdown.items():
+                            ui.label(f"• {name}: {val:+d}")
                 # CMD Column
                 with ui.element("div").classes("flex flex-col"):
                     ui.label("CMD").style("font-weight: bold; text-align: center")
-                    with ui.element("div").classes("h-24"):
+                    with ui.element("div"):
                         ui.label(f"Total CMD: {cmd_total:+d}")
-                    ui.separator()
-                    ui.label("Breakdown:")
-                    for name, val in cmd_breakdown.items():
-                        ui.label(f"• {name}: {val:+d}")
+                    with expansion("CMD Breakdown"):
+                        for name, val in cmd_breakdown.items():
+                            ui.label(f"• {name}: {val:+d}")
                 # Saves Column
                 with ui.element("div").classes("flex flex-col"):
                     ui.label("Saves").style("font-weight: bold; text-align: center")
-                    with ui.element("div").classes("h-24"):
+                    with ui.element("div"):
                         for save, data in saves_breakdown.items():
                             save_total = sum(data.values())
                             ui.label(f"{save.value}: {save_total:+d}")
-                    ui.separator()
-                    for save, data in saves_breakdown.items():
-                        ui.label(f"{save.value}:")
-                        for name, val in data.items():
-                            ui.label(f"• {name}: {val:+d}")
+                    with expansion("Saves Breakdown"):
+                        for save, data in saves_breakdown.items():
+                            ui.label(f"{save.value}:")
+                            for name, val in data.items():
+                                ui.label(f"• {name}: {val:+d}")
 
 
 # Dialog and helpers for status effects
