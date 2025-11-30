@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from pfchar.char.base import ACType, Effect, Dice, Save, Statistic
+from pfchar.char.base import BAB_KEY, ACType, Effect, Dice, Save, Statistic
 
 if TYPE_CHECKING:
     from pfchar.char.base import CriticalBonus
@@ -36,6 +36,17 @@ def crit_to_string(critical_bonus: "CriticalBonus") -> str:
     if critical_bonus.damage_bonus:
         string += f" (+{sum_up_dice(critical_bonus.damage_bonus)})"
     return string
+
+
+def to_attack_string(attack_bonuses: dict[str, int]) -> str:
+    attack_bonus = sum(attack_bonuses.values())
+    attacks = [attack_bonus]
+    bab = attack_bonuses[BAB_KEY]
+    while bab > 5:
+        bab -= 5
+        attacks.append(attack_bonus - (len(attacks) * 5))
+
+    return "/".join(f"{attack:+d}" for attack in attacks)
 
 
 class CustomEffect(Effect):

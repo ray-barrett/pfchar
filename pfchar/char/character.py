@@ -1,6 +1,7 @@
 import dataclasses
 
 from pfchar.char.base import (
+    BAB_KEY,
     stat_modifier,
     ACType,
     CriticalBonus,
@@ -71,7 +72,7 @@ class Character:
 
     def attack_bonus(self) -> dict[str, int]:
         modifiers = {
-            "Base Attack Bonus": self.base_attack_bonus,
+            BAB_KEY: self.base_attack_bonus,
         }
         if self.main_hand and (enchantment := self.main_hand.attack_bonus(self)):
             modifiers["Weapon Enchantment"] = enchantment
@@ -158,7 +159,7 @@ class Character:
             else Statistic.STRENGTH
         )
         modifiers = {
-            "Base Attack Bonus": self.base_attack_bonus,
+            BAB_KEY: self.base_attack_bonus,
             # TODO: Inconsistency - attack/damage use unmodified stats, but CMD uses modified.
             #       Either stat is always modified or stat modifying items are always separate line items.
             #       The former is much more straightforward, and likely more accurate.
@@ -186,7 +187,7 @@ class Character:
         }
         modifiers = {
             "Base CMD": 10,
-            "Base Attack Bonus": self.base_attack_bonus,
+            BAB_KEY: self.base_attack_bonus,
             Statistic.STRENGTH.value: stat_modifier(
                 self.modified_statistic(Statistic.STRENGTH)
             ),

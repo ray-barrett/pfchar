@@ -29,6 +29,7 @@ from pfchar.utils import (
     get_touch_ac,
     get_flat_footed_ac,
     get_total_ac,
+    to_attack_string,
 )
 from pfchar.char.base import Save
 
@@ -192,7 +193,7 @@ def render_combat_modifiers():
     cmd_breakdown = character.get_cmd()
     saves_breakdown = character.get_saves()
 
-    attack_total = sum(attack_mods.values())
+    attack_string = to_attack_string(attack_mods)
     damage_total_str = sum_up_modifiers(damage_mods)
     cmb_total = sum(cmb_breakdown.values()) if cmb_breakdown else 0
     cmd_total = sum(cmd_breakdown.values()) if cmd_breakdown else 0
@@ -203,7 +204,7 @@ def render_combat_modifiers():
         ):
             # Attack Column
             with ui.element("div").classes("flex flex-col"):
-                with expansion(f"To Hit {attack_total:+d}").style(
+                with expansion(f"To Hit {attack_string}").style(
                     "font-weight: bold; text-align: center"
                 ):
                     for name, val in attack_mods.items():

@@ -6,6 +6,9 @@ if TYPE_CHECKING:
     from pfchar.char.character import Character
 
 
+BAB_KEY = "Base Attack Bonus"
+
+
 class WeaponType(enum.StrEnum):
     SWORD = "Sword"
     AXE = "Axe"
