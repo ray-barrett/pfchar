@@ -127,7 +127,6 @@ someone_else = Character(
 )
 all_characters = (yoyu, someone_else)
 CHARACTERS_BY_NAME = {c.name: c for c in all_characters}
-STATUS_DIALOG = None
 
 
 def get_character():
@@ -317,10 +316,8 @@ def render_combat_modifiers():
 
 
 def open_add_status_dialog():
-    global STATUS_DIALOG
-    if STATUS_DIALOG is None:
-        STATUS_DIALOG = create_status_dialog()
-    STATUS_DIALOG.open()
+    status_dialog = create_status_dialog()
+    status_dialog.open()
 
 
 def delete_status(index: int):
