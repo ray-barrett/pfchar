@@ -538,12 +538,6 @@ async def page():
             for c in all_characters:
                 ui.tab(c.name)
 
-    # Panels (optional visual grouping)
-    with ui.tab_panels(tabs, value=selected_name) as panels:
-        for c in all_characters:
-            with ui.tab_panel(c.name):
-                pass  # content is global; page re-renders on selection change
-
     # Initial render with default
     render_page()
 
