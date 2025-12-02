@@ -1,4 +1,4 @@
-from nicegui import ui
+from nicegui import app, ui
 
 from pfchar.char.base import stat_modifier, CriticalBonus, Dice, Save, Statistic
 from pfchar.char.character import Character
@@ -32,7 +32,7 @@ from pfchar.utils import (
 )
 from pfchar.char.base import Save
 
-character = Character(
+yoyu = Character(
     name="Yoyu Tekko",
     level=19,
     statistics={
@@ -86,6 +86,47 @@ character = Character(
     ],
 )
 
+someone_else = Character(
+    name="Someone Else",
+    level=19,
+    statistics={
+        Statistic.STRENGTH: 13,
+        Statistic.DEXTERITY: 18,
+        Statistic.CONSTITUTION: 14,
+        Statistic.INTELLIGENCE: 12,
+        Statistic.WISDOM: 14,
+        Statistic.CHARISMA: 14,
+    },
+    base_attack_bonus=13,
+    base_saves={
+        Save.FORTITUDE: 9,
+        Save.REFLEX: 6,
+        Save.WILL: 8,
+    },
+    main_hand=Weapon(
+        name="Some Dagger",
+        type=WeaponType.DAGGER,
+        critical=CriticalBonus(crit_range=19),
+        base_damage=Dice(num=1, sides=6),
+        enchantment_modifier=2,
+        enchantments=[],
+    ),
+    feats=[
+        Dodge(),
+    ],
+    items=[
+        StatisticModifyingItem(
+            name="Headband of Charisma (+6)",
+            stats={
+                Statistic.CHARISMA: 6,
+            },
+        ),
+        RingOfProtection(bonus=2),
+        CloakOfResistance(bonus=3),
+    ],
+)
+all_characters = (yoyu, someone_else)
+character = yoyu
 
 EXPANSION = {}
 
@@ -277,129 +318,14 @@ def render_combat_modifiers():
                             ui.label(f"• {name}: {val:+d}")
 
 
-# Dialog and helpers for status effects
-status_dialog = ui.dialog()
-with status_dialog:
-    with ui.card():
-        ui.label("Add Status").style("font-weight: bold; font-size: 1.2rem")
-        status_name_input = ui.input("Name").props("clearable")
-        status_attack_input = ui.number("Attack Bonus", value=0)
-        status_damage_input = ui.number("Damage Bonus", value=0)
-        # per-stat modifiers
-        ui.label("Statistic Modifiers").style("margin-top: 0.5rem")
-        stat_inputs: dict[Statistic, any] = {}
-        with ui.column():
-            for stat in Statistic:
-                stat_inputs[stat] = ui.number(stat.value, value=0)
-        # per-save modifiers
-        ui.label("Save Modifiers").style("margin-top: 0.5rem")
-        save_inputs: dict[Save, any] = {}
-        with ui.row().classes("gap-4"):
-            for save in Save:
-                save_inputs[save] = ui.number(save.value, value=0)
-        # warning message area
-        warn_label = ui.label("At least one non-name value is required.").style(
-            "color: #b00020"
-        )
-        warn_label.visible = False
-        with ui.row():
-
-            def create_status():
-                name = (status_name_input.value or "").strip()
-                # require non-empty name
-                if not name:
-                    warn_label.visible = False
-                    status_name_input.props('error error-message="Name is required"')
-                    return
-                # check if any non-default fields are provided
-                non_default = bool(int(status_attack_input.value or 0)) or bool(
-                    int(status_damage_input.value or 0)
-                )
-                if not non_default:
-                    for inp in stat_inputs.values():
-                        try:
-                            if int(inp.value or 0) != 0:
-                                non_default = True
-                                break
-                        except Exception:
-                            continue
-                if not non_default:
-                    for inp in save_inputs.values():
-                        try:
-                            if int(inp.value or 0) != 0:
-                                non_default = True
-                                break
-                        except Exception:
-                            continue
-                if not non_default:
-                    # show warning and block submission
-                    warn_label.visible = True
-                    return
-                warn_label.visible = False
-
-                attack = int(status_attack_input.value or 0)
-                damage = int(status_damage_input.value or 0)
-                stats_dict = {}
-                for stat, inp in stat_inputs.items():
-                    try:
-                        v = int(inp.value or 0)
-                    except Exception:
-                        v = 0
-                    if v:
-                        stats_dict[stat] = v
-                saves_dict = {}
-                for save, inp in save_inputs.items():
-                    try:
-                        v = int(inp.value or 0)
-                    except Exception:
-                        v = 0
-                    if v:
-                        saves_dict[save] = v
-                character.statuses.append(
-                    create_status_effect(
-                        name,
-                        attack_bonus=attack,
-                        damage_bonus=damage,
-                        statistics=stats_dict,
-                        saves=saves_dict,
-                    )
-                )
-                # reset dialog inputs after successful add
-                status_name_input.value = ""
-                status_name_input.props('error=false error-message=""')
-                status_attack_input.value = 0
-                status_damage_input.value = 0
-                for inp in stat_inputs.values():
-                    inp.value = 0
-                for inp in save_inputs.values():
-                    inp.value = 0
-                status_dialog.close()
-                render_statuses.refresh()
-                update_combat_sections()
-
-            ui.button("Create", on_click=create_status).props("color=primary")
-            ui.button("Cancel", on_click=lambda: status_dialog.close())
-
-        # clear error/warning when user types or changes values
-        def clear_name_error(_):
-            status_name_input.props('error=false error-message=""')
-            warn_label.visible = False
-
-        status_name_input.on("input", clear_name_error)
-
-        def clear_warning(_):
-            warn_label.visible = False
-
-        status_attack_input.on("change", clear_warning)
-        status_damage_input.on("change", clear_warning)
-        for inp in stat_inputs.values():
-            inp.on("change", clear_warning)
-        for inp in save_inputs.values():
-            inp.on("change", clear_warning)
+STATUS_DIALOG = None
 
 
 def open_add_status_dialog():
-    status_dialog.open()
+    global STATUS_DIALOG
+    if STATUS_DIALOG is None:
+        STATUS_DIALOG = create_status_dialog()
+    STATUS_DIALOG.open()
 
 
 def delete_status(index: int):
@@ -433,17 +359,193 @@ def update_combat_sections():
     render_combat_modifiers.refresh()
 
 
-with ui.header():
-    ui.label(character.name).style("font-weight: bold; font-size: 1.5rem")
+# Page renderer to rebuild sections for current character
+@ui.refreshable
+def render_page():
+    # rebuild all sections for the selected global `character`
+    with ui.row():
+        with ui.column().style("gap: 0.1rem; width: 100%"):
+            render_statistics()
+            render_weapons()
+            render_items()
+            render_abilities()
+            render_feats()
+            render_statuses()
+            render_combat_modifiers()
 
-with ui.row():
-    with ui.column().style("gap: 0.1rem"):
-        render_statistics()
-        render_weapons()
-        render_items()
-        render_abilities()
-        render_feats()
-        render_statuses()
-        render_combat_modifiers()
+
+def on_character_change(name: str):
+    global character
+    # swap current character by name
+    for c in all_characters:
+        if c.name == name:
+            character = c
+            break
+    else:
+        character = all_characters[0]
+    # store per tab (requires client connection)
+    try:
+        app.storage.tab["selected_character"] = name
+    except Exception:
+        pass
+    # rerender page
+    render_page.refresh()
+
+
+def create_status_dialog():
+    # Dialog and helpers for status effects
+    status_dialog = ui.dialog()
+    with status_dialog:
+        with ui.card():
+            ui.label("Add Status").style("font-weight: bold; font-size: 1.2rem")
+            status_name_input = ui.input("Name").props("clearable")
+            status_attack_input = ui.number("Attack Bonus", value=0)
+            status_damage_input = ui.number("Damage Bonus", value=0)
+            # per-stat modifiers
+            ui.label("Statistic Modifiers").style("margin-top: 0.5rem")
+            stat_inputs: dict[Statistic, any] = {}
+            with ui.column():
+                for stat in Statistic:
+                    stat_inputs[stat] = ui.number(stat.value, value=0)
+            # per-save modifiers
+            ui.label("Save Modifiers").style("margin-top: 0.5rem")
+            save_inputs: dict[Save, any] = {}
+            with ui.row().classes("gap-4"):
+                for save in Save:
+                    save_inputs[save] = ui.number(save.value, value=0)
+            # warning message area
+            warn_label = ui.label("At least one non-name value is required.").style(
+                "color: #b00020"
+            )
+            warn_label.visible = False
+            with ui.row():
+
+                def create_status():
+                    name = (status_name_input.value or "").strip()
+                    # require non-empty name
+                    if not name:
+                        warn_label.visible = False
+                        status_name_input.props(
+                            'error error-message="Name is required"'
+                        )
+                        return
+                    # check if any non-default fields are provided
+                    non_default = bool(int(status_attack_input.value or 0)) or bool(
+                        int(status_damage_input.value or 0)
+                    )
+                    if not non_default:
+                        for inp in stat_inputs.values():
+                            try:
+                                if int(inp.value or 0) != 0:
+                                    non_default = True
+                                    break
+                            except Exception:
+                                continue
+                    if not non_default:
+                        for inp in save_inputs.values():
+                            try:
+                                if int(inp.value or 0) != 0:
+                                    non_default = True
+                                    break
+                            except Exception:
+                                continue
+                    if not non_default:
+                        # show warning and block submission
+                        warn_label.visible = True
+                        return
+                    warn_label.visible = False
+
+                    attack = int(status_attack_input.value or 0)
+                    damage = int(status_damage_input.value or 0)
+                    stats_dict = {}
+                    for stat, inp in stat_inputs.items():
+                        try:
+                            v = int(inp.value or 0)
+                        except Exception:
+                            v = 0
+                        if v:
+                            stats_dict[stat] = v
+                    saves_dict = {}
+                    for save, inp in save_inputs.items():
+                        try:
+                            v = int(inp.value or 0)
+                        except Exception:
+                            v = 0
+                        if v:
+                            saves_dict[save] = v
+                    character.statuses.append(
+                        create_status_effect(
+                            name,
+                            attack_bonus=attack,
+                            damage_bonus=damage,
+                            statistics=stats_dict,
+                            saves=saves_dict,
+                        )
+                    )
+                    # reset dialog inputs after successful add
+                    status_name_input.value = ""
+                    status_name_input.props('error=false error-message=""')
+                    status_attack_input.value = 0
+                    status_damage_input.value = 0
+                    for inp in stat_inputs.values():
+                        inp.value = 0
+                    for inp in save_inputs.values():
+                        inp.value = 0
+                    status_dialog.close()
+                    render_statuses.refresh()
+                    update_combat_sections()
+
+                ui.button("Create", on_click=create_status).props("color=primary")
+                ui.button("Cancel", on_click=lambda: status_dialog.close())
+
+            # clear error/warning when user types or changes values
+            def clear_name_error(_):
+                status_name_input.props('error=false error-message=""')
+                warn_label.visible = False
+
+            status_name_input.on("input", clear_name_error)
+
+            def clear_warning(_):
+                warn_label.visible = False
+
+            status_attack_input.on("change", clear_warning)
+            status_damage_input.on("change", clear_warning)
+            for inp in stat_inputs.values():
+                inp.on("change", clear_warning)
+            for inp in save_inputs.values():
+                inp.on("change", clear_warning)
+
+    return status_dialog
+
+
+@ui.page("/")
+async def page():
+    await ui.context.client.connected()
+
+    # Restore selection from tab storage
+    selected_name = app.storage.tab.get("selected_character")
+    if selected_name not in {c.name for c in all_characters}:
+        selected_name = all_characters[0].name
+
+    # Handle tab changes
+    def handle_tab_change(e):
+        if e.value:
+            on_character_change(e.value)
+
+    # Tabs for characters
+    with ui.header():
+        with ui.tabs(value=selected_name, on_change=handle_tab_change) as tabs:
+            for c in all_characters:
+                ui.tab(c.name)
+
+    # Panels (optional visual grouping)
+    with ui.tab_panels(tabs, value=selected_name) as panels:
+        for c in all_characters:
+            with ui.tab_panel(c.name):
+                pass  # content is global; page re-renders on selection change
+
+    # Initial render with default
+    render_page()
+
 
 ui.run()

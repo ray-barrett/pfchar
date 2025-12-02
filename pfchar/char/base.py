@@ -14,6 +14,11 @@ class WeaponType(enum.StrEnum):
     AXE = "Axe"
     BOW = "Bow"
     HAMMER = "Hammer"
+    DAGGER = "Dagger"
+    STAFF = "Staff"
+    SPEAR = "Spear"
+    MACE = "Mace"
+    UNARMED = "Unarmed"
 
 
 class Statistic(enum.StrEnum):
