@@ -74,38 +74,39 @@ YOYU = Character(
     ],
 )
 
-SOMEONE_ELSE = Character(
-    name="Someone Else",
+DORAMAK = Character(
+    name="Doramak Colegard",
     level=19,
     statistics={
-        Statistic.STRENGTH: 13,
-        Statistic.DEXTERITY: 18,
-        Statistic.CONSTITUTION: 14,
-        Statistic.INTELLIGENCE: 12,
-        Statistic.WISDOM: 14,
-        Statistic.CHARISMA: 14,
+        Statistic.STRENGTH: 16,
+        Statistic.DEXTERITY: 12,
+        Statistic.CONSTITUTION: 12,
+        Statistic.INTELLIGENCE: 10,
+        Statistic.WISDOM: 19,
+        Statistic.CHARISMA: 12,
     },
-    base_attack_bonus=13,
+    base_attack_bonus=15,
     base_saves={
-        Save.FORTITUDE: 9,
+        Save.FORTITUDE: 12,
         Save.REFLEX: 6,
-        Save.WILL: 8,
+        Save.WILL: 12,
     },
     main_hand=Weapon(
-        name="Some Dagger",
-        type=WeaponType.DAGGER,
+        name="Adamantine Longsword",
+        type=WeaponType.SWORD,
         critical=CriticalBonus(crit_range=19),
-        base_damage=Dice(num=1, sides=6),
-        enchantment_modifier=2,
+        base_damage=Dice(num=1, sides=8),
         enchantments=[],
     ),
     feats=[
-        Dodge(),
+        # Dodge(),
     ],
     items=[
         StatisticModifyingItem(
-            name="Headband of Charisma (+6)",
+            name="Headband of Mental Superiority (+6)",
             stats={
+                Statistic.WISDOM: 6,
+                Statistic.INTELLIGENCE: 6,
                 Statistic.CHARISMA: 6,
             },
         ),
