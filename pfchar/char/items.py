@@ -109,7 +109,7 @@ class CelestialArmour(Armour):
 
 @dataclasses.dataclass
 class AmuletOfNaturalArmor(Item):
-    def __init__(self, bonus: int = 2):
+    def __init__(self, bonus: int = 1):
         super().__init__(name=f"Amulet of Natural Armor (+{bonus})")
         self.bonus = bonus
 

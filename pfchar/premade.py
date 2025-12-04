@@ -9,6 +9,7 @@ from pfchar.char.items import (
     AmuletOfNaturalArmor,
     RingOfProtection,
     CloakOfResistance,
+    Armour,
 )
 from pfchar.char.feats import (
     Dodge,
@@ -92,15 +93,14 @@ DORAMAK = Character(
         Save.WILL: 12,
     },
     main_hand=Weapon(
-        name="Adamantine Longsword",
+        name="+2 Adamantine Longsword",
         type=WeaponType.SWORD,
         critical=CriticalBonus(crit_range=19),
         base_damage=Dice(num=1, sides=8),
+        enchantment_modifier=2,
         enchantments=[],
     ),
-    feats=[
-        # Dodge(),
-    ],
+    feats=[],
     items=[
         StatisticModifyingItem(
             name="Headband of Mental Superiority (+6)",
@@ -110,7 +110,28 @@ DORAMAK = Character(
                 Statistic.CHARISMA: 6,
             },
         ),
-        RingOfProtection(bonus=2),
-        CloakOfResistance(bonus=3),
+        StatisticModifyingItem(
+            name="Belt of Giant Strength (+4)",  # From Yoyu
+            stats={
+                Statistic.STRENGTH: 4,
+            },
+        ),
+        Armour(
+            name="+4 Adamantine Full Plate",
+            armour_bonus=9,
+            enhancement_bonus=4,  # Upgraded
+            max_dex_bonus=1,
+            armor_check_penalty=-6,
+            spell_failure_chance=35,
+            # DR 3/-
+        ),
+        Armour(
+            name="+3 Animated Light Shield",
+            shield_bonus=1,
+            enhancement_bonus=3,  # Upgraded
+        ),
+        RingOfProtection(bonus=3),  # Upgraded
+        CloakOfResistance(bonus=3),  # Upgraded
+        AmuletOfNaturalArmor(bonus=2),  # Made
     ],
 )
